@@ -12,28 +12,43 @@ contract('PredictionMarket', function(accounts) {
     })
   });
 
-  it("allows to add 2 new questions", function() {
+  it("allows to add a question", function(done) {
     var m = PredictionMarket.deployed();
-    Q1Added = m.addQuestion.call("Will Trump be a good president?").then(function(questionId) {
-      return assert.strictEqual(questionId.valueOf(), 0);
-    });
-    Q2Added = m.addQuestion.call("Will you get rich?").then(function(questionId) {
-      return assert.strictEqual(questionId.valueOf(), 1);
-    });
-    return Q1Added && Q2Added;
+    return m.addQuestion("Will Trump be a good president?").then(done());
   });
 
-  it("can read the two questions", function() {
+  it("allows to add another question", function(done) {
     var m = PredictionMarket.deployed();
-    return m.getQuestion(0).then(function(questionText) {
+    return m.addQuestion("Will you get rich?").then(done());
+  });
+
+  it("shows the new question", function() {
+    var m = PredictionMarket.deployed();
+    return m.questions.call(0).then(function(q) {
+      return assert.equal(q[1]  , "Will Trump be a good president?")
+    });
+  });
+
+  it("can read the text of the second question", function() {
+    var m = PredictionMarket.deployed();
+    return m.getQuestionText.call(0).then(function(questionText) {
       return assert.equal(questionText, "Will Trump be a good president?");
     });
   });
 
-  it("can accept bets on a question", function() {
+  it("can accept a bet on a question", function(done) {
     var m = PredictionMarket.deployed();
-    return m.betQuestion(0, 0).then(function(betId) {
-      return assert.equal(betId, 0);
-    })
+    return m.betQuestion(0, false).then(done());
+  });
+
+  it("can read the submitted bet", function() {
+    var m = PredictionMarket.deployed();
+    return m.getQuestionBet.call(0, 0).then(function(bets) {
+      accountsCorrect = (bets[0] == accounts[0]);
+      valueCorrect = (bets[1] == 0);
+      predictionCorrect = (bets[2] == false);
+      lengthsMatch = (bets.length == 3)
+      return assert.isTrue(lengthsMatch && accountsCorrect && valueCorrect && predictionCorrect);
+    });
   });
 });

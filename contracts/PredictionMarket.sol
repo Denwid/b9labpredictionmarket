@@ -35,15 +35,22 @@ contract PredictionMarket is mortal {
     function addQuestion(string questionText) returns (uint id) {
         if (msg.sender != admin()) { throw; }
         id = questions.length++;
-        //questions[id].questionId = id;
-        //questions[id].text = questionText;
-        //questions[id].resolved = false;
-        //questions[id].truth = false;
+        questions[id].questionId = id;
+        questions[id].text = questionText;
+        questions[id].resolved = false;
+        questions[id].truth = false;
         return id;
     }
 
-    function getQuestion(uint questionId) returns (string text) {
+    function getQuestionText(uint questionId) returns (string text) {
         return questions[questionId].text;
+    }
+
+    function getQuestionBet(uint questionId, uint betId) returns (address bettor, uint stake, bool predictedOutcome) {
+        bettor = questions[questionId].bets[betId].bettor;
+        stake = questions[questionId].bets[betId].stake;
+        predictedOutcome = questions[questionId].bets[betId].predictedOutcome;
+        return (bettor, stake, predictedOutcome);
     }
 
     function betQuestion(uint questionId, bool opinion) payable returns (uint betId) {
