@@ -1,56 +1,44 @@
-var accounts;
-var account;
-var balance;
+var app = angular.module('predictionMarketApp', []);
 
-function setStatus(message) {
-  var status = document.getElementById("status");
-  status.innerHTML = message;
-};
+app.controller("predictionMarketController", [ '$scope', '$window', '$timeout', function($scope, $window, $timeout) {
+        $scope.accounts = [];
+        $scope.account = "";
+        $scope.balance = "";
 
-function refreshBalance() {
-  var meta = MetaCoin.deployed();
+        $scope.questions = [
+            {id: 0, text: "dummy question?", resolved: false, truth: undefined}
+        ]
 
-  meta.getBalance.call(account, {from: account}).then(function(value) {
-    var balance_element = document.getElementById("balance");
-    balance_element.innerHTML = value.valueOf();
-  }).catch(function(e) {
-    console.log(e);
-    setStatus("Error getting balance; see log.");
-  });
-};
+        $scope.updateBalance = function() {
+           $scope.balance = web3.eth.getBalance($scope.account);
+        }
 
-function sendCoin() {
-  var meta = MetaCoin.deployed();
+        $scope.getAccounts = function() {
+            web3.eth.getAccounts(function(err, accs) {
+                    if (err != null) {
+                        alert("There was an error fetching accounts.");
+                        return;
+                    }
 
-  var amount = parseInt(document.getElementById("amount").value);
-  var receiver = document.getElementById("receiver").value;
+                    if (accs.length == 0) {
+                        alert("Couldn't get any accounts! Make sure your Ethereum client is configured correctly.");
+                        return;
+                    }
 
-  setStatus("Initiating transaction... (please wait)");
+                    console.log(accs);
+                    $scope.accounts = accs;
+                    $scope.account = $scope.accounts[0];
+                    $scope.updateBalance();
+            })
+        }
 
-  meta.sendCoin(receiver, amount, {from: account}).then(function() {
-    setStatus("Transaction complete!");
-    refreshBalance();
-  }).catch(function(e) {
-    console.log(e);
-    setStatus("Error sending coin; see log.");
-  });
-};
+        $scope.getQuestions = function() {
+           m =  PredictionMarket.deployed()
+        };
 
-window.onload = function() {
-  web3.eth.getAccounts(function(err, accs) {
-    if (err != null) {
-      alert("There was an error fetching your accounts.");
-      return;
-    }
+        $window.onload = function () {
+            $scope.getAccounts();
+            $scope.getQuestions();
+        }
 
-    if (accs.length == 0) {
-      alert("Couldn't get any accounts! Make sure your Ethereum client is configured correctly.");
-      return;
-    }
-
-    accounts = accs;
-    account = accounts[0];
-
-    refreshBalance();
-  });
-}
+}]);
