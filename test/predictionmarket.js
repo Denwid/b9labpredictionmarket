@@ -51,4 +51,48 @@ contract('PredictionMarket', function(accounts) {
       return assert.isTrue(lengthsMatch && accountsCorrect && valueCorrect && predictionCorrect);
     });
   });
+
+  it("can accept a first bet on a second question", function(done) {
+    var m = PredictionMarket.deployed();
+    return m.betQuestion(1, false, {value: 17, from:accounts[1]}).then(done())
+  });
+
+  it("can accept a second bet on the second question", function(done) {
+    var m = PredictionMarket.deployed();
+    m.betQuestion(1, false, {value: 6, from:accounts[2]}).then(done())
+  })
+
+  it("can accept a third bet on the second question", function(done) {
+    var m = PredictionMarket.deployed();
+    m.betQuestion(1, true, {value: 100, from:accounts[3]}).then(done())
+  })
+
+  it("can resolve the second question", function(done){
+    var m = PredictionMarket.deployed();
+
+    var before = {
+      A: web3.eth.getBalance(accounts[1]),
+      B: web3.eth.getBalance(accounts[2]),
+      C: web3.eth.getBalance(accounts[3])
+    }
+    //console.log(before)
+
+    return m.resolveQuestion(1, false)
+    .then(function() {
+      var after = {
+        A: web3.eth.getBalance(accounts[1]),
+        B: web3.eth.getBalance(accounts[2]),
+        C: web3.eth.getBalance(accounts[3])
+      }
+
+      differenceA = after.A.minus(before.A).toNumber();
+      differenceB = after.B.minus(before.B).toNumber();
+      differenceC = after.C.minus(before.C).toNumber();
+
+      return assert.equal(differenceA, 90)
+      && assert.equal(differenceB, 32)
+      && assert.equal(differenceC, -100);
+    })
+    .then(done());
+  });
 });
