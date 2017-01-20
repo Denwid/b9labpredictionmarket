@@ -60,10 +60,13 @@ contract PredictionMarket is mortal {
         return betId;
     }
 
-    event totalCalculated(uint totalValue, uint totalValueCorrectBets, uint totalValueWrongBets);
+    event TotalToDistribute(uint totalValue, uint totalValueCorrectBets, uint totalValueWrongBets);
+    event Sending(uint amount, address receiver);
+
 
     function resolveQuestion(uint questionId, bool truth) {
         if (msg.sender != admin()) { throw; }
+        if (questions[questionId].resolved == true) { throw; }
         questions[questionId].truth = truth;
         uint i;
         uint totalValue;
@@ -78,13 +81,17 @@ contract PredictionMarket is mortal {
             }
         }
 
-        totalCalculated(totalValue, totalValueCorrectBets, totalValueWrongBets);
+        TotalToDistribute(totalValue, totalValueCorrectBets, totalValueWrongBets);
 
         for (i = 0; i < questions[questionId].bets.length; i++) {
             if (questions[questionId].bets[i].predictedOutcome == questions[questionId].truth) {
                 uint payout = questions[questionId].bets[i].stake*totalValue/totalValueCorrectBets;
-                if (questions[questionId].bets[i].bettor.send(payout) == false) { throw; }
+                address receiver = questions[questionId].bets[i].bettor;
+                Sending(payout, receiver);
+                if (receiver.send(payout) == false) { throw; }
             }
         }
+
+        questions[questionId].resolved = true;
     }
 }

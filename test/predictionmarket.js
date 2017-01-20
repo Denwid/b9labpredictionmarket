@@ -67,7 +67,7 @@ contract('PredictionMarket', function(accounts) {
     m.betQuestion(1, true, {value: 100, from:accounts[3]}).then(done())
   })
 
-  it("can resolve the second question", function(done){
+  it("can resolve the second question", function(){
     var m = PredictionMarket.deployed();
 
     var before = {
@@ -89,10 +89,41 @@ contract('PredictionMarket', function(accounts) {
       differenceB = after.B.minus(before.B).toNumber();
       differenceC = after.C.minus(before.C).toNumber();
 
-      return assert.equal(differenceA, 90)
-      && assert.equal(differenceB, 32)
-      && assert.equal(differenceC, -100);
+      Acorrect = assert.equal(differenceA, 90);
+      Bcorrect = assert.equal(differenceB, 32);
+      Ccorrect = assert.equal(differenceC, 0);
+
+      return Acorrect && Bcorrect && Ccorrect
     })
-    .then(done());
   });
+
+  it("can resolve the second question again", function() {
+    var m = PredictionMarket.deployed();
+
+    var before = {
+      A: web3.eth.getBalance(accounts[1]),
+      B: web3.eth.getBalance(accounts[2]),
+      C: web3.eth.getBalance(accounts[3])
+    }
+    //console.log(before)
+
+    return m.resolveQuestion(1, false)
+    .then(function() {
+      var after = {
+        A: web3.eth.getBalance(accounts[1]),
+        B: web3.eth.getBalance(accounts[2]),
+        C: web3.eth.getBalance(accounts[3])
+      }
+
+      differenceA = after.A.minus(before.A).toNumber();
+      differenceB = after.B.minus(before.B).toNumber();
+      differenceC = after.C.minus(before.C).toNumber();
+
+      return assert.equal(differenceA, 0)
+      && assert.equal(differenceB, 0)
+      && assert.equal(differenceC, 0);
+    })
+    .catch(function(e) {});
+  })
+
 });
