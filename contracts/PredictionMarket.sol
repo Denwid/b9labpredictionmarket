@@ -1,17 +1,8 @@
 pragma solidity ^0.4.2;
 
-contract owned {
-    function owned() { owner = msg.sender; }
-    address owner;
-}
+import "Mortal.sol";
 
-contract mortal is owned {
-    function kill() {
-        if (msg.sender == owner) selfdestruct(owner);
-    }
-}
-
-contract PredictionMarket is mortal {
+contract PredictionMarket is Mortal {
     Question[] public questions;
 
     struct Bet {
