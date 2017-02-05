@@ -5,6 +5,13 @@ contract('PredictionMarket', function(accounts) {
     done();
   });
 
+  it("should be owned by accounts[0]", function(){
+    var m = PredictionMarket.deployed();
+    return m.getOwner.call().then(function(o) {
+      return assert.equal(o, accounts[0]);
+    })
+  });
+
   it("sets admin account correctly", function() {
     var m = PredictionMarket.deployed();
     return m.admin.call().then(function(outAdminAddress) {
