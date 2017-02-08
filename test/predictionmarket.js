@@ -14,7 +14,7 @@ contract('PredictionMarket', function(accounts) {
 
   it("sets admin account correctly", function() {
     var m = PredictionMarket.deployed();
-    return m.admin.call().then(function(outAdminAddress) {
+    return m.getAdmin.call().then(function(outAdminAddress) {
       return assert.equal(outAdminAddress , accounts[0]);
     })
   });

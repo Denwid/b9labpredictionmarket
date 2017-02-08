@@ -7,8 +7,8 @@ contract PredictionMarket is Mortal {
 
     struct Bet {
         address bettor;
-        uint stake;
         bool predictedOutcome;
+        uint stake;
     }
 
     struct Question {
@@ -19,12 +19,12 @@ contract PredictionMarket is Mortal {
         Bet[] bets;
     }
 
-    function admin() returns (address) {
+    function getAdmin() constant returns (address) {
         return owner;
     }
 
     function addQuestion(string questionText) returns (uint id) {
-        if (msg.sender != admin()) { throw; }
+        if (msg.sender != getAdmin()) { throw; }
         id = questions.length++;
         questions[id].questionId = id;
         questions[id].text = questionText;
@@ -33,21 +33,21 @@ contract PredictionMarket is Mortal {
         return id;
     }
 
-    function getQuestionText(uint questionId) returns (string text) {
+    function getQuestionText(uint questionId) constant returns (string text) {
         return questions[questionId].text;
     }
 
-    function getQuestionBet(uint questionId, uint betId) returns (address bettor, uint stake, bool predictedOutcome) {
+    function getQuestionBet(uint questionId, uint betId) constant returns (address bettor, bool predictedOutcome, uint stake) {
         bettor = questions[questionId].bets[betId].bettor;
         stake = questions[questionId].bets[betId].stake;
         predictedOutcome = questions[questionId].bets[betId].predictedOutcome;
-        return (bettor, stake, predictedOutcome);
+        return (bettor, predictedOutcome, stake);
     }
 
     function betQuestion(uint questionId, bool opinion) payable returns (uint betId) {
         if (questions[questionId].resolved == true) { throw; }
         betId = questions[questionId].bets.length;
-        questions[questionId].bets.push(Bet(msg.sender, msg.value, opinion));
+        questions[questionId].bets.push(Bet(msg.sender, opinion, msg.value));
         return betId;
     }
 
@@ -56,7 +56,7 @@ contract PredictionMarket is Mortal {
 
 
     function resolveQuestion(uint questionId, bool truth) {
-        if (msg.sender != admin()) { throw; }
+        if (msg.sender != getAdmin()) { throw; }
         if (questions[questionId].resolved == true) { throw; }
         questions[questionId].truth = truth;
         uint i;
