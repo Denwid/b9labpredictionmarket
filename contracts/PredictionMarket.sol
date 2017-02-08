@@ -25,7 +25,8 @@ contract PredictionMarket is Mortal {
 
     function addQuestion(string questionText) returns (uint id) {
         if (msg.sender != getAdmin()) { throw; }
-        id = questions.length++;
+        id = questions.length;
+        questions.length++;
         questions[id].questionId = id;
         questions[id].text = questionText;
         questions[id].resolved = false;
@@ -47,7 +48,11 @@ contract PredictionMarket is Mortal {
     function betQuestion(uint questionId, bool opinion) payable returns (uint betId) {
         if (questions[questionId].resolved == true) { throw; }
         betId = questions[questionId].bets.length;
-        questions[questionId].bets.push(Bet(msg.sender, opinion, msg.value));
+        questions[questionId].bets.push(Bet({
+            bettor: msg.sender,
+            predictedOutcome: opinion,
+            stake: msg.value
+        }));
         return betId;
     }
 
@@ -57,7 +62,7 @@ contract PredictionMarket is Mortal {
 
     function resolveQuestion(uint questionId, bool truth) {
         if (msg.sender != getAdmin()) { throw; }
-        if (questions[questionId].resolved == true) { throw; }
+        if (questions[questionId].resolved) { throw; }
         questions[questionId].truth = truth;
         uint i;
         uint totalValue;
