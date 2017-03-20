@@ -16,6 +16,9 @@ contract PredictionMarket is Mortal {
         string text;
         bool resolved;
         bool truth;
+        uint totalValue;
+        uint totalValueWrongBets;
+        uint totalValueCorrectBets;
         Bet[] bets;
     }
 
@@ -23,14 +26,19 @@ contract PredictionMarket is Mortal {
         return owner;
     }
 
-    function addQuestion(string questionText) returns (uint id) {
-        if (msg.sender != getAdmin()) { throw; }
+    modifier adminOnly() {
+        if (msg.sender == getAdmin()) _;
+    }
+
+    function addQuestion(string questionText) adminOnly returns (uint id) {
         id = questions.length;
         questions.length++;
-        questions[id].questionId = id;
-        questions[id].text = questionText;
-        questions[id].resolved = false;
-        questions[id].truth = false;
+        theQuestion = questions[id]
+        theQuestion.questionId = id;
+        theQuestion.text = questionText;
+        theQuestion.resolved = false;
+        theQuestion.truth = false;
+        theQuestion.totalValue = 0;
         return id;
     }
 
@@ -47,47 +55,53 @@ contract PredictionMarket is Mortal {
 
     function betQuestion(uint questionId, bool opinion) payable returns (uint betId) {
         if (questions[questionId].resolved == true) { throw; }
-        betId = questions[questionId].bets.length;
-        questions[questionId].bets.push(Bet({
+        theQuestion = questions[questionId]
+        theQuestion.totalValue += msg.value;
+        return theQuestion.bets.push(Bet({
             bettor: msg.sender,
             predictedOutcome: opinion,
             stake: msg.value
         }));
-        return betId;
     }
 
     event TotalToDistribute(uint totalValue, uint totalValueCorrectBets, uint totalValueWrongBets);
     event Sending(uint amount, address receiver);
 
-
     function resolveQuestion(uint questionId, bool truth) {
         if (msg.sender != getAdmin()) { throw; }
-        if (questions[questionId].resolved) { throw; }
-        questions[questionId].truth = truth;
-        uint i;
-        uint totalValue;
-        uint totalValueWrongBets;
-        uint totalValueCorrectBets;
-        for (i = 0; i < questions[questionId].bets.length; i++) {
-            totalValue += questions[questionId].bets[i].stake;
-            if (questions[questionId].bets[i].predictedOutcome != questions[questionId].truth) {
-                totalValueWrongBets += questions[questionId].bets[i].stake;
-            } else {
-                totalValueCorrectBets += questions[questionId].bets[i].stake;
-            }
+        theQuestion = questions[questionId];
+        if (theQuestion.resolved == true) { throw; }
+        theQuestion.truth = truth;
+        theQuestion.resolved = true;
+    }
+
+    function calculateContribution(uint questionId, uint betId) {
+        Question theQuestion = questions[questionId];
+        if (theQuestion.resolved == false) { throw; }
+        Bet theBet = theQuestion.bets[betId];
+        if (theBet.predictedOutcome != theQuestion.truth) {
+            totalValueWrongBets += theBet.stake;
+        } else {
+            totalValueCorrectBets += theBet.stake;
         }
+        TotalToDistribute(theQuestion.totalValue, theQuestion.totalValueCorrectBets, theQuestion.totalValueWrongBets);
+    }
 
-        TotalToDistribute(totalValue, totalValueCorrectBets, totalValueWrongBets);
+    function cashOut(uint questionId, uint betId)
+        if (questions[questionId].resolved == false) { throw; }
+        Question theQuestion = questions[questionId];
+        if (theQuestion.totalValueCorrectBets + theQuestion.totalValueWrongBets < theQuestion.totalValue) { throw; }
+        Bet theBet = theQuestion.bets[betId];
+        if (theBet.bettor != msg.sender) { throw; }
+        if (theBet.predictedOutcome != theQuestion.truth) { throw; }
+        
+        uint payout = theBet.stake*theQuestion.totalValue/theQuestion.totalValueCorrectBets;
+        uint leftover = 
+        if (msg.sender.send(payout) == false) { throw; }
+        Sending(payout, receiver);
+    }
 
-        for (i = 0; i < questions[questionId].bets.length; i++) {
-            if (questions[questionId].bets[i].predictedOutcome == questions[questionId].truth) {
-                uint payout = questions[questionId].bets[i].stake*totalValue/totalValueCorrectBets;
-                address receiver = questions[questionId].bets[i].bettor;
-                Sending(payout, receiver);
-                if (receiver.send(payout) == false) { throw; }
-            }
-        }
+    function drainLeftover() {
 
-        questions[questionId].resolved = true;
     }
 }
